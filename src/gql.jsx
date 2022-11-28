@@ -21,15 +21,14 @@ const getHeaders = headers => {
 export function configure({
 	endPoint,
 	host,
-	headers,
+	headers = {},
 	...others
 }) {
 	const data = _.pick({
-		url: host && endPoint ? host + endPoint : null,
+		url: endPoint||'',
+		header: headers,
 		...others
 	}, v => !!v);
-
-	if (data.)
 
 	Object.assign(configData, data);
 
@@ -178,7 +177,7 @@ function handleResponse(res, query) {
 
 	// For single query
 	if (query.name) {
-		const name = query.alias && camelCase(query.alias)||query.name;
+		const name = query.alias||query.name;
 
 		if (error[name]){
 			if (query.onError) {

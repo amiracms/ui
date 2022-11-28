@@ -1,4 +1,4 @@
-import {pathToRegexp} from "path-to-regexp";
+import pathToRegexp from "path-to-regexp";
 import _ from "underscore";
 
 export default function Route(url, routes, currentUser) {
@@ -17,7 +17,7 @@ export default function Route(url, routes, currentUser) {
 		const keys = [];
 		const routePath = route.path.replace('?', '\\?');
 		const parser = new pathToRegexp(routePath, keys);
-		const arra = parser.exec(url);
+		const arr = parser.exec(url);
 
 		if (!arr) {
 			continue;
@@ -38,7 +38,7 @@ export default function Route(url, routes, currentUser) {
 		// Maybe there are multiple params
 		if (routePath.match('(.*)')) {
 			// Get the parameters thru the remaining array
-			_.extend(foundRoute.params, getParamsInQuery(url));
+			_.extend(found.params, getParamsInQuery(url));
 		}
 
 		// Validate user

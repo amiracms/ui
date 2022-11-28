@@ -4,24 +4,59 @@ import {configure} from "../gql";
 import Route from "./route";
 
 export default new class Screen {
-	#store = Store({name: 'Screen', serialize: false})
+	store = Store({name: 'Screen', serialize: false})
 
 	#config = {}
+
+	#settings = {}
 
 	#actions = []
 
 	#filters = []
 
-	#queries = {}
+	#queries = []
 
-	#routes = {}
+	#routes = []
 
+	/**
+	 * Get the value of the current state property base on the given name.
+	 * 
+	 * @param {string} name
+	 * 	The name of the state to get the value at.
+	 * @return {*}
+	 **/
 	get(name) {
-		return this.#store.getState(name);
+		return this.store.getState(name);
 	}
 
+	/**
+	 * Sets or updates the configuration.
+	 * 
+	 * @param {object}
+	 * 	The new configuration options to set or update to.
+	 **/
 	configure(config) {
+		const headers = this.#config.headers||{'X-Client': config.client||this.#config.client};
+
+		if (config.sessionId) {
+			headers['X-Session-Id'] = config.sessionId;
+		}
+
+		config.headers = headers;
+
 		this.#config = configure(config);
+	}
+
+	config(name) {
+		return this.#config[name];
+	}
+
+	settings(settings) {
+		this.#settings = settings;
+	}
+
+	setting(name) {
+		return this.#settings[name];
 	}
 
 	/**
@@ -156,8 +191,6 @@ export default new class Screen {
 		user,
 		permission
 	}) {
-		const client = this.isAdmin() ? 'admin' : this.#config.client;
-		
 		path = _.isArray(path) ? path : [path];
 
 		path.map(
@@ -171,14 +204,15 @@ export default new class Screen {
 					content,
 					user,
 					permission,
-					client
+					client: this.#config.client
 				});
 			}
 		);
 	}
 
 	/**
-	 * Sets GraphQL Get request to the server.
+	 * Adds GraphQL Get request to the server to the list of requests
+	 * to send to the server after the screen is loaded.
 	 * 
 	 * @param {string} alias
 	 * 	A unique alias name to wrap the gql query name.
@@ -205,10 +239,17 @@ export default new class Screen {
 		this.#queries.push({alias, name, args, fields, onSuccess, onError});
 	}
 
-	#shouldLoad(url) {
+	/**
+	 * Check if the url is of the same site as the application.
+	 * 
+	 * @param {string} url
+	 * 	The url string to check to.
+	 * @return {boolean}
+	 **/
+	isSameSite(url) {
 		if (!url.match(/http/)) {
 			// Same url, return
-			return false;
+			return true;
 		}
 
 		const host = this.#config.host;
@@ -235,7 +276,7 @@ export default new class Screen {
 		}
 
 		// If it is a third party url, just load it
-		if (this.#shouldLoad(url)) {
+		if (!this.isSameSite(url)) {
 			if (this.refreshBrowser) {
 				this.refreshBrowser(url);
 			}
@@ -248,7 +289,8 @@ export default new class Screen {
 			url,
 			oldUrl: currentUrl,
 			name: this.#config.name,
-			tagline: this.#config.tagline
+			tagline: this.#config.tagline,
+			client: this.#config.client
 		};
 
 		/**
@@ -285,7 +327,7 @@ export default new class Screen {
 		// Accept new queries
 		this.canQuery = true;
 
-		this.#store.resetState(route);
+		this.store.resetState(route);
 
 		/**
 		 * Triggered whenever a new screen enters.
@@ -311,7 +353,7 @@ export default new class Screen {
 			return Promise.resolve(true);
 		}
 
-		return this.#store
+		return this.store
 			.fetch(
 				{query: this.#queries},
 				() => {this.#queries = []},

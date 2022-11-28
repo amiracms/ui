@@ -9,3 +9,14 @@ export function setError(error, code) {
 
 	return err;
 }
+
+/**
+ * Assets the given condition and returns and error with custom message.
+ **/
+export function devAssert(condition, message) {
+    if ((_.isBoolean(condition) && condition) || condition) {
+        return;
+    }
+
+    throw new Error(message);
+}

@@ -1,22 +1,38 @@
 "use strict";
 
 const gulp = require('gulp');
-const browserify = require('browserify');
-const source = require('vinyl-source-stream');
-
-const bundles = [
-    "react", 
-    "react-dom",
-    "axios",
-    "underscore",
-    "htmlparser2",
-    "path-to-regexp",
-    "history",
-    "ua-parser-js",
-    "formik",
-    "yup"
-];
+const through = require('through2');
+const fs = require('fs');
 
 gulp.task('build', function() {
-
+    return gulp.src([
+            './src/*.jsx',
+            './src/**/*.jsx'
+        ])
+        .pipe(transpiler())
+        .pipe(gulp.dest('./lib'));
 });
+
+function transpiler() {
+    const babel = require('@babel/core');
+
+    return through.obj(function(file, enc, cb) {
+        if (!file.isBuffer()) {
+            return cb();
+        }
+
+        const content = babel.transform(file.contents.toString());
+
+        if (!content.code) {
+            return cb();
+        }
+
+        file.contents = Buffer.from(content.code);
+
+        if (file.path && !file.path.match(/\.min.js/)) {
+            file.path = file.path.replace('.jsx', '.js');
+        }
+
+        cb(null, file);
+    });
+}
